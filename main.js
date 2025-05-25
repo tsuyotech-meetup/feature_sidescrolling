@@ -1,30 +1,21 @@
+/*
+mainクラス
+*/
+
+import Player from './player.js';
+import Enemy from './enemy.js';
+import Bullet from './bullet.js';
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const player = new Player(100, 280);
 
-/// ごちゃごちゃしてきたので情報ごとにファイルを分けて整理したい、、、、
+// 敵関連
+const enemyBulletWidth = 10;
+const enemyBulletHeight = 5;
+const enemyBulletSpeed = 10;
+const enemy = new Enemy(1630, 190, enemyBulletWidth, enemyBulletHeight, enemyBulletSpeed);
 
-// プレイヤー情報
-const player = {
-    x: 100,
-    y: 280,
-    width: 40,
-    height: 40,
-    vx: 0,
-    vy: 0,
-    speed: 5,
-    jumpPower: 15,
-    onGround: false,
-};
-
-// 敵キャラクター情報
-const enemy = {
-    x: 1630,         // 600番台のプラットフォーム中央に配置
-    y: 190,         // プラットフォーム高さ230 - 敵の高さ40
-    width: 40,
-    height: 40,
-    nextShootTime: 0,
-    shootInterval: 1000 + Math.random() * 2000 // 1-3秒のランダム間隔
-};
 
 // 地面・障害物
 const platforms = [
@@ -63,29 +54,29 @@ document.addEventListener('keydown', e => {
 
     // Jキーで弱攻撃　Iキーで強攻撃　の弾を発射
     if (e.code === 'KeyJ' && now >= nextShootTime_A) {
-        bullets.push({
-            x: player.x + player.width,
-            y: player.y + player.height / 2 - bulletHeight_A / 2,
-            vx: bulletSpeed_A,
-            vy: 0,
-            width: bulletWidth_A,
-            height: bulletHeight_A,
-            type: 'A'
-        });
+        bullets.push(new Bullet(
+            player.x + player.width,
+            player.y + player.height / 2 - bulletHeight_A / 2,
+            bulletSpeed_A,
+            0,
+            bulletWidth_A,
+            bulletHeight_A,
+            'A'
+        ));
         nextShootTime_A = now + shootCooldown_A;
     }
 
     // Iキーで強攻撃
     if (e.code === 'KeyI' && now >= nextShootTime_B) {
-        bullets.push({
-            x: player.x + player.width,
-            y: player.y + player.height / 2 - bulletHeight_B / 2,
-            vx: bulletSpeed_B,
-            vy: 0,
-            width: bulletWidth_B,
-            height: bulletHeight_B,
-            type: 'B'
-        });
+        bullets.push(new Bullet(
+            player.x + player.width,
+            player.y + player.height / 2 - bulletHeight_B / 2,
+            bulletSpeed_B,
+            0,
+            bulletWidth_B,
+            bulletHeight_B,
+            'B'
+        ));
         nextShootTime_B = now + shootCooldown_B;
     }
 });
@@ -95,48 +86,13 @@ document.addEventListener('keyup', e => keys[e.code] = false);
 let cameraX = 0;
 
 function update() {
-    // 左右移動
-    if (keys['KeyD']) player.vx = player.speed;
-    else if (keys['KeyA']) player.vx = -player.speed;
-    else player.vx = 0;
+    player.update(keys, platforms);
+    enemy.update(bullets, Date.now());
 
-    // ジャンプ
-    if (keys['Space'] && player.onGround) {
-        player.vy = -player.jumpPower;
-        player.onGround = false;
-    }
-
-    // 重力
-    player.vy += 0.7;
-
-    // 移動
-    player.x += player.vx;
-    player.y += player.vy;
-
-    // 地面・障害物との当たり判定
-    player.onGround = false;
-    for (const p of platforms) {
-        // 簡易AABB判定
-        if (
-            player.x < p.x + p.width &&
-            player.x + player.width > p.x &&
-            player.y < p.y + p.height &&
-            player.y + player.height > p.y
-        ) {
-            // プレイヤーが上から着地
-            if (player.vy > 0 && player.y + player.height - player.vy <= p.y) {
-                player.y = p.y - player.height;
-                player.vy = 0;
-                player.onGround = true;
-            }
-        }
-    }
-
-        // 弾の移動と当たり判定
+    // 弾の移動と当たり判定
     for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
-        b.x += b.vx;
-        b.y += b.vy;
+        b.update();
 
         // プラットフォームとの当たり判定
         let hit = false;
@@ -185,25 +141,6 @@ function update() {
         }
     }
 
-    // 敵の射撃処理
-    const now = Date.now();
-    if (now >= enemy.nextShootTime) {
-        bullets.push({
-            x: enemy.x - bulletWidth_A, // 左側から発射
-            y: enemy.y + enemy.height/2 - bulletHeight_A/2,
-            vx: -bulletSpeed_A, // 左方向に移動
-            vy: 0,
-            width: bulletWidth_A,
-            height: bulletHeight_A,
-            type: 'enemy' // 弾の種類を追加
-        });
-        
-        // 次の射撃タイミングをランダムに設定
-        enemy.nextShootTime = now + 1000 + Math.random() * 2000;
-    }
-
-        if (gameOver) return; // ゲームオーバー時は処理を停止
-
     // 敵弾とプレイヤーの当たり判定
     for (const b of bullets) {
         if (b.type === 'enemy') {
@@ -218,6 +155,9 @@ function update() {
             }
         }
     }
+
+    // ゲームオーバー時は処理を停止
+    if (gameOver) return; 
 
     // カメラをプレイヤーに追従
     cameraX = player.x - 150;
@@ -236,16 +176,16 @@ function draw() {
 
     // プレイヤー描画
     ctx.fillStyle = '#ffb703';
-    ctx.fillRect(player.x - cameraX, player.y, player.width, player.height);
+    player.draw(ctx, cameraX);
 
     // 敵キャラクターの描画（暗い赤色）
     ctx.fillStyle = '#8B0000';
-    ctx.fillRect(enemy.x - cameraX, enemy.y, enemy.width, enemy.height);
+    enemy.draw(ctx, cameraX);
 
     // 弾の描画
     ctx.fillStyle = '#e63946';
     for (const b of bullets) {
-        ctx.fillRect(b.x - cameraX, b.y, b.width, b.height);
+        b.draw(ctx, cameraX);
     }
 
     /// ゲーム画面のGUI描画関係
