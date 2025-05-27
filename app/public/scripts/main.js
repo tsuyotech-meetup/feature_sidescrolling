@@ -6,7 +6,7 @@ import Player from './player.js';
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const player = new Player(100, 280);
+const player = new Player(430, 0);
 
 // キー入力管理
 const keys = {};
@@ -26,12 +26,23 @@ let cameraX = 0;
 document.addEventListener('keydown', e => {keys[e.code] = true;});
 document.addEventListener('keyup', e => keys[e.code] = false);
 
+let lastPlayerUpdate = 0;
+const updateInterval = 1000 / 10; 
+
 function update() {
+    const previousX = player.x;
+    const previousY = player.y;
     player.update(keys, platforms);
 
-    // カメラをプレイヤーに追従
-    cameraX = player.x - 150;
-    if (cameraX < 0) cameraX = 0;
+    const now = Date.now();
+    // x座標またはy座標が変更され、かつupdateIntervalが経過した場合にのみ送信
+    if ((player.x !== previousX || player.y !== previousY) && (now - lastPlayerUpdate > updateInterval)) {
+        socket.emit('playerUpdate', { x: player.x, y: player.y });
+        lastPlayerUpdate = now;
+    }
+    
+    // カメラをプレイヤーの位置に追従させる
+    cameraX = player.x - canvas.width / 2 + player.width / 2;
 }
 
 function draw() {
@@ -57,9 +68,12 @@ function gameLoop() {
 
 
 const socket = io();
+const otherPlayers = {}; // 他のプレイヤーを格納するオブジェクト
+
 socket.on('connect', () => {
     console.log('Connected to server with ID:', socket.id);
-    socket.emit('playerUpdate', { x: player.x });
+    player.id = socket.id;
+    socket.emit('playerUpdate', { x: player.x, y: player.y });
 });
 
 gameLoop();
