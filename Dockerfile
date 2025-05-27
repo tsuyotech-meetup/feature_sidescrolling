@@ -1,6 +1,6 @@
 FROM node:22-bookworm-slim AS base
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
 COPY app/package*.json app/package-lock.json ./
 
@@ -14,6 +14,8 @@ FROM base AS dev
 
 RUN apt-get update && apt-get install -y \
     git
+
+COPY . /usr/src
 
 # Production stage
 FROM base AS prod
