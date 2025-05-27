@@ -4,6 +4,7 @@ playerクラス
 
 class Player {
     constructor(x, y) {
+        this.id = null;
         this.x = x;
         this.y = y;
         this.width = 40;
@@ -13,6 +14,7 @@ class Player {
         this.speed = 5;
         this.jumpPower = 15;
         this.onGround = false;
+        this.color = '#ffb703';
     }
 
     update(keys, platforms) {
@@ -55,7 +57,7 @@ class Player {
     }
 
     draw(ctx, cameraX) {
-        ctx.fillStyle = '#ffb703';
+        ctx.fillStyle = this.color;
         ctx.fillRect(this.x - cameraX, this.y, this.width, this.height);
     }
 }
