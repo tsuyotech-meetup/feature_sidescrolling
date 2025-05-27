@@ -1,0 +1,11 @@
+services:
+  node:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    tty: true
+    stdin_open: true
+    command: /bin/bash
+    volumes:
+      - ./app:/app
