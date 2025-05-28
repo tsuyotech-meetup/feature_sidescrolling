@@ -4,6 +4,13 @@ services:
       context: .
       dockerfile: Dockerfile
       target: dev
+    environment:
+      - TZ=Asia/Tokyo
     tty: true
     stdin_open: true
     command: /bin/bash
+
+  redis:
+    image: redis:alpine
+    environment:
+      - TZ=Asia/Tokyo
