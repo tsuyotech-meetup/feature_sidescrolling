@@ -2,9 +2,11 @@
   "name": "sample-express-socketio",
   "version": "1.0.0",
   "main": "main.js",
+  "type": "module",
   "description": "node.js+Express+Socket.io",
   "dependencies": {
     "express": "^5.1.0",
+    "redis": "^5.1.0",
     "socket.io": "^4.8.1"
   }
 }
