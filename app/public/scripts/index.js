@@ -25,8 +25,14 @@ let cameraX = 0;
 // キーイベントリスナー
 document.addEventListener('keydown', e => {keys[e.code] = true;});
 document.addEventListener('keyup', e => keys[e.code] = false);
+document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && player.onGround) {
+        socket.emit('playerJump');
+    }
+});
 
 let lastPlayerUpdate = 0;
+let sentOnce = false;
 const updateInterval = 1000 / 10; 
 
 function update() {
@@ -36,9 +42,10 @@ function update() {
 
     const now = Date.now();
     // x座標またはy座標が変更され、かつupdateIntervalが経過した場合にのみ送信
-    if ((player.x !== previousX || player.y !== previousY) && (now - lastPlayerUpdate > updateInterval)) {
+    if ((player.x !== previousX || player.y !== previousY) && (now - lastPlayerUpdate > updateInterval || !sentOnce)) {
         socket.emit('playerUpdate', { x: player.x, y: player.y });
         lastPlayerUpdate = now;
+        sentOnce = true;
     }
     
     // カメラをプレイヤーの位置に追従させる
@@ -79,13 +86,15 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// 移動描画の補完処理
 function updateOtherPlayers() {
   otherPlayers.forEach(otherPlayer => {
+    // 位置補間
     otherPlayer.x += (otherPlayer.targetX - otherPlayer.x) * 0.3;
-    otherPlayer.y += (otherPlayer.targetY - otherPlayer.y) * 0.3;
+    // otherPlayer.y += (otherPlayer.targetY - otherPlayer.y) * 0.3;
+    otherPlayer.update({}, platforms);
   });
 }
+
 
 
 const socket = io();
@@ -115,6 +124,14 @@ socket.on('playersData', (players) => {
       otherPlayers.delete(id);
     }
   });
+});
+
+socket.on('playerJump', (data) => {
+    const otherPlayer = otherPlayers.get(data.playerId);
+    if (otherPlayer) {
+        otherPlayer.vy = -15; // ジャンプ力を直接適用
+        otherPlayer.onGround = false;
+    }
 });
 
 socket.on('connect', () => {

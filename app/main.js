@@ -57,6 +57,10 @@ io.on('connection', (socket) => {
             .catch(error => console.error('Redis operation failed on playerUpdate:', error));
     });
 
+    socket.on('playerJump', () => {
+        io.emit('playerJump', { playerId: socket.id, timestamp: Date.now() });
+    });
+
     // プレイヤーの削除
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
