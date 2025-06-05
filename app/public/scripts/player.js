@@ -4,15 +4,20 @@ playerクラス
 
 class Player {
     constructor(x, y) {
+        this.id = null;
         this.x = x;
         this.y = y;
         this.width = 40;
         this.height = 40;
         this.vx = 0;
         this.vy = 0;
-        this.speed = 5;
+        this.speed = 3;
         this.jumpPower = 15;
         this.onGround = false;
+        this.color = '#ffb703';
+        this.targetX = x;
+        this.targetY = y;
+
     }
 
     update(keys, platforms) {
@@ -52,10 +57,17 @@ class Player {
                 }
             }
         }
+
+        // 落下判定
+        if (this.y > 500) {
+            this.x = 430;
+            this.y = 0;
+        }
+        
     }
 
     draw(ctx, cameraX) {
-        ctx.fillStyle = '#ffb703';
+        ctx.fillStyle = this.color;
         ctx.fillRect(this.x - cameraX, this.y, this.width, this.height);
     }
 }

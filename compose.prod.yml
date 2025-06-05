@@ -1,0 +1,15 @@
+services:
+  node:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: prod
+    ports:
+      - "7000:7000"
+    environment:
+      - TZ=Asia/Tokyo
+
+  redis:
+    image: redis:alpine
+    environment:
+      - TZ=Asia/Tokyo
